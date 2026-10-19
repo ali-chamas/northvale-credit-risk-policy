@@ -1,0 +1,32 @@
+{% set d = m.data %}{% set md = m.models %}{% set p = m.pnl %}{% set rec = p.options.balanced %}{% set test = d.splits.test %}
+# Model card: Northvale Credit default model (LightGBM)
+
+Northvale Credit is fictional; this card documents a learning project on public Lending Club data, in the format a high-risk credit model would need.
+
+**Purpose.** Estimate the probability that a new 36-month unsecured personal loan applicant defaults (Charged Off or Default) over the life of the loan, to support an approve / decline decision at a PD cutoff of {{ rec.pd_cutoff | pct }}.
+
+**Not for:** pricing, credit limits, 60-month loans, joint applications, applicants below FICO 660, or any population outside Lending Club's 2012-2015 approved borrowers.
+
+**Training data.** {{ d.splits.train.n | num }} resolved loans issued 2012-2014 ({{ d.splits.train.default_rate | pct }} default). Validation {{ d.splits.valid.n | num }} loans (Jan-Jun 2015), test {{ test.n | num }} loans (Jul-Dec 2015). Only fields known at application are used ({{ md.lgbm.n_features }} features; see `data_dictionary.md` and `feature_audit.csv`).
+
+**Model.** LightGBM, {{ md.lgbm.best_params.num_leaves }} leaves, {{ md.lgbm.best_iteration }} trees, early stopping on validation, Platt recalibration on validation. Challenger: logistic WoE scorecard with {{ md.scorecard.n_characteristics }} characteristics.
+
+**Performance on the test window.**
+
+| Metric | LightGBM | Scorecard | LC sub-grade (incumbent) |
+|---|---|---|---|
+| AUC | {{ md.lgbm.auc | dec(3) }} | {{ md.scorecard.auc | dec(3) }} | {{ md.grade.auc | dec(3) }} |
+| KS | {{ md.lgbm.ks | dec(3) }} | {{ md.scorecard.ks | dec(3) }} | {{ md.grade.ks | dec(3) }} |
+| Brier | {{ md.lgbm.brier | dec(4) }} | {{ md.scorecard.brier | dec(4) }} | {{ md.grade.brier | dec(4) }} |
+| Mean PD / observed | {{ md.lgbm.mean_pd | pct }} / {{ md.lgbm.observed | pct }} | {{ md.scorecard.mean_pd | pct }} / {{ md.scorecard.observed | pct }} | {{ md.grade.mean_pd | pct }} / {{ md.grade.observed | pct }} |
+| Score PSI, train vs test | {{ md.lgbm.psi_train_test | dec(3) }} | {{ md.scorecard.psi_train_test | dec(3) }} | {{ md.grade.psi_train_test | dec(3) }} |
+
+Default rate by LightGBM decile ranges from {{ md.lgbm.decile_1_rate | pct }} (safest) to {{ md.lgbm.decile_10_rate | pct }} (riskiest). Largest decile calibration gap: {{ md.lgbm.max_decile_calibration_gap | pp(1, false) }}.
+
+**Explainability.** SHAP values per applicant; the three largest risk-raising contributions become plain-English reason codes (for adverse-action notices). Top global drivers: {{ m.shap.top_labels | join("; ") }}.
+
+**Fairness and regulation.** No protected attributes are used or available. Geography (zip code, state) and job title are excluded as potential proxies. Outcome testing by protected group has not been done and is required before any use. In the EU, creditworthiness scoring of individuals is a high-risk use under the AI Act (risk management, data governance, documentation, human oversight, monitoring). In the US, ECOA / Regulation B require specific adverse-action reasons.
+
+**Known limitations.** Trained on approved loans only (no reject inference); one credit cycle (2012-2015); losses per default rose in 2015 ({{ p.drift.test.L | pct }} vs {{ p.assumptions.L | pct }} in training); prices held fixed.
+
+**Monitoring plan.** Monthly: score PSI and top-feature PSI (watch at {{ m.monitoring.psi_watch | dec }}, act at {{ m.monitoring.psi_alert | dec }}), approval rate, early delinquency (30+ days past due at 3 and 6 months on book) by vintage, PD vs observed by decile once outcomes mature, override rate and reasons. Recalibrate when mean PD and observed default rate diverge by more than one percentage point for two consecutive quarters.

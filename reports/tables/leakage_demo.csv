@@ -1,0 +1,7 @@
+label,field,test_auc
+"Application
+fields only",,0.7008337995668887
+"+ last FICO
+(refreshed later)",last_fico_range_high,0.9475655085717429
+"+ principal
+repaid to date",total_rec_prncp,0.9997834103518779

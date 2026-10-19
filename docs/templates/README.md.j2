@@ -1,0 +1,206 @@
+{% set d = m.data %}{% set v = m.vintage %}{% set dec = v.decomposition_2013_2015 %}{% set md = m.models %}{% set p = m.pnl %}{% set sq = p.status_quo %}{% set rec = p.options.balanced %}{% set cons = p.options.conservative %}{% set grow = p.options.growth %}{% set a = p.assumptions %}{% set au = m.audit %}{% set lk = m.leakage %}{% set test = d.splits.test %}{% set dg = p.grade_rules["Decline D-G"] %}{% set eg = p.grade_rules["Decline E-G"] %}
+# Northvale Credit: an approval policy that cuts losses without killing volume
+
+**Question:** which applicants should a digital lender stop approving, and what is that worth, now that its grade-based rules no longer match the risk?
+
+> **Case study: fictional company.** Northvale Credit is a fictional company invented for this project. The analysis uses public Lending Club loan data (Kaggle, 2007-2018) and was built for learning purposes. No real client, revenue or employer is represented.
+
+**Deck:** [PDF](deck/Northvale_case_study.pdf) · [PPTX](deck/Northvale_case_study.pptx) · **Simulator:** [Streamlit app](app/streamlit_app.py) (`make app`; deployment steps in [DEPLOY.md](DEPLOY.md)) · **Notebooks:** [01 scope](notebooks/01_scope_and_target.ipynb) · [02 leakage](notebooks/02_leakage_audit.ipynb) · [03 EDA](notebooks/03_eda_default_drivers.ipynb) · [04 scorecard](notebooks/04_scorecard.ipynb) · [05 LightGBM + SHAP](notebooks/05_gradient_boosting_and_shap.ipynb) · [06 policy](notebooks/06_policy_and_pnl.ipynb)
+
+## TL;DR
+
+- **The grade drifted.** Default rates on 36-month loans rose from {{ dec.default_rate_from | pct }} (2013 vintage) to {{ dec.default_rate_to | pct }} (2015). The grade mix got slightly safer ({{ dec.mix_effect | pp }}); riskier loans inside each grade added {{ dec.rate_effect | pp }}, while prices fell. Rules written on grades now approve more risk for less return.
+- **A model built only on application data ranks risk better than Lending Club's own sub-grade:** test AUC {{ md.lgbm.auc | dec(3) }} vs {{ md.grade.auc | dec(3) }} (LightGBM vs sub-grade), and it splits each grade into very different risks (grade C: {{ md.within_grade.C.safest | pct }} vs {{ md.within_grade.C.riskiest | pct }} default for its safest and riskiest fifths).
+- **Recommendation: decline applicants whose LightGBM probability of default is above {{ rec.pd_cutoff | pct }}.** On {{ test.n | num }} loans issued July to December 2015 that no model saw during training or tuning, this keeps {{ rec.approval_rate | pct }} of applicants ({{ rec.volume_share | pct }} of dollar volume), cuts the default rate from {{ sq.default_rate | pct }} to {{ rec.default_rate | pct }} and moves realized profit from {{ sq.realized_profit | usd }} to {{ rec.realized_profit | usd }} for the half-year.
+- **Projected impact, under stated assumptions:** {{ p.annual.profit_change | susd }} profit and {{ p.annual.loss_avoided | usd }} of credit losses avoided a year, on a book the size of the test window annualised ({{ p.annualisation.annual_amount | usd }} a year). Range {{ p.scenarios.low.annual_realized_profit_change | susd }} to {{ p.scenarios.high.annual_realized_profit_change | susd }} across cost scenarios.
+
+![Realized profit by approval rate](reports/figures/policy_profit_curve.png)
+
+## 1. Business problem
+
+Northvale Credit lends unsecured personal loans online. Its default rate is climbing and its approval rules are based on letter grades. The credit committee asked for **an approval policy that cuts expected losses without killing loan volume**, with a projected impact they can debate and a simulator a credit manager can use to test other cutoffs.
+
+The decision this informs: at what estimated probability of default (PD) should an application be declined, given what each loan earns when it pays off and loses when it defaults.
+
+## 2. Data
+
+| | |
+|---|---|
+| Source | Lending Club accepted loans 2007-2018Q4, Kaggle dataset `wordsforthewise/lending-club` (file `accepted_2007_to_2018Q4.csv.gz`, {{ d.raw_rows | num }} loans, {{ d.raw_columns }} columns) |
+| Licence | Listed as CC0: Public Domain on Kaggle (uploaded by Nathan George from LendingClub's public loan downloads). Used here for education only |
+| Scope | 36-month loans issued January 2012 to December 2015, individual applications: {{ d.scope_rows | num }} loans |
+| Excluded | {{ d.non_terminal_excluded | num }} loans still running at the snapshot, {{ d.joint_excluded | num }} joint applications (they start in October 2015 and do not exist in training) |
+| Sample | {{ d.sample_rows | num }} resolved loans, {{ d.sample_amount | usd }} lent, default rate {{ d.sample_default_rate | pct }} |
+| Split (by issue month) | Train Jan 2012-Dec 2014: {{ d.splits.train.n | num }} loans ({{ d.splits.train.default_rate | pct }} default) · Validation Jan-Jun 2015: {{ d.splits.valid.n | num }} ({{ d.splits.valid.default_rate | pct }}) · Test Jul-Dec 2015: {{ test.n | num }} ({{ test.default_rate | pct }}) |
+
+**Why 36-month loans from 2012 to 2015.** The original brief suggested 2015-2018. At the data snapshot, {{ m.censoring.share_36m_2016 | pct(0) }} of 36-month loans issued in 2016 and {{ m.censoring.share_36m_2017 | pct(0) }} of those issued in 2017 were still running. Keeping only their finished loans would over-sample early defaults and early payoffs and bias the default rate. For 36-month loans issued 2012-2015, only {{ m.censoring.scope_non_terminal_share | pct(2) }} are unresolved. 60-month loans are left out ({{ m.censoring.share_60m_2015 | pct(0) }} of the 2015 vintage still running) and listed as a next step.
+
+![Share of loans still running by vintage](reports/figures/censoring_by_vintage.png)
+
+**Known quirks.** Every loan in the file was approved by Lending Club, so the data says nothing about rejected applicants. FICO at application starts at 660 (Lending Club's floor). Many bureau fields (for example `tot_cur_bal`, `mort_acc`) only start in mid-2012, so they are empty for the first months of training; LightGBM and the scorecard's missing bin handle this. The 2.2M-row CSV is never loaded into pandas: DuckDB reads only the columns each query needs.
+
+## 3. Approach
+
+1. **Target.** Default = `Charged Off` or `Default`; good = `Fully Paid`. Loans still current, in grace or late at the snapshot are excluded and counted per vintage (`reports/tables/scope_flow.csv`).
+2. **Out-of-time split.** Train on 2012-2014, tune and recalibrate on January-June 2015, test once on July-December 2015. A random split would let the model learn from loans issued after the ones it is scored on.
+3. **Leakage audit.** Every one of the {{ au.n_columns }} raw columns has a documented decision in [`docs/feature_audit.csv`](docs/feature_audit.csv): available at application or not, category, keep or drop, and why. {{ au.n_candidate_features }} application-time features remain. Lending Club's grade, sub-grade, interest rate and instalment are excluded as features: they are the incumbent model's output, so they serve as the benchmark and in the P&L.
+4. **Three rankers.** (a) Lending Club sub-grade, the incumbent. (b) A logistic scorecard on weight-of-evidence bins (optbinning, monotonic bins, IV filter, correlation filter, coefficient sign check, {{ md.scaling.base_points }} points at {{ md.scaling.base_odds }}:1 odds, {{ md.scaling.pdo }} points to double the odds). (c) LightGBM with early stopping on validation and a small grid. All three are recalibrated on validation (Platt scaling) because 2015 defaulted more than 2012-2014.
+5. **Explanations.** SHAP values on LightGBM, turned into plain-English reason codes for each applicant.
+6. **Money, not AUC, picks the cutoff.** Expected profit per loan = principal x [(1 - PD) x G - PD x L - costs], with G and L measured on the training window. The cutoff is chosen on validation and judged on the test window with the cash each loan actually returned.
+
+## 4. Findings
+
+### 4.1 The same grade meant more risk at a lower price in 2015
+
+| Grade | Default rate 2013 | Default rate 2015 | Avg. rate 2013 | Avg. rate 2015 |
+|---|---|---|---|---|
+{% for g in ["A", "B", "C", "D", "E"] %}
+| {{ g }} | {{ v.by_grade[g].dr_2013 | pct }} | {{ v.by_grade[g].dr_2015 | pct }} | {{ v.by_grade[g].rate_2013 | pct }} | {{ v.by_grade[g].rate_2015 | pct }} |
+{% endfor %}
+
+Default rates rose inside every grade while interest rates fell in grades A to E. Splitting the {{ dec.change | pp }} rise between 2013 and 2015: the grade mix contributed {{ dec.mix_effect | pp }} (it shifted toward safer grades) and higher default rates within grades contributed {{ dec.rate_effect | pp }}. By quarter, the default rate bottomed at {{ v.min_quarter_rate | pct }} ({{ v.min_quarter }}) and peaked at {{ v.max_quarter_rate | pct }} ({{ v.max_quarter }}). This is an association across vintages, not a causal estimate: Lending Club's pricing, marketing and the credit cycle all changed at once.
+
+![Default rate by issue quarter](reports/figures/default_rate_by_quarter.png)
+
+### 4.2 Post-origination fields look like magic and are useless at decision time
+
+A single-column screen on the training window ranks every raw field by how well it separates defaults on its own. The {{ au.n_flagged }} columns above {{ au.flag_threshold | dec }} are all recorded after the loan is issued (strongest: `{{ au.max_post_column }}` at {{ au.max_post_auc | dec }}). The best genuine application field, FICO, reaches {{ au.max_app_auc | dec }}; Lending Club's sub-grade {{ au.subgrade_auc_train | dec }}. Retraining the final LightGBM with one leaked field shows the damage: test AUC goes from {{ lk.baseline_auc | dec(3) }} to {{ lk.auc_with_last_fico | dec(3) }} with the refreshed FICO score and to {{ lk.auc_with_total_rec_prncp | dec(4) }} with principal repaid to date.
+
+![Single-field AUC screen](reports/figures/leakage_auc_screen.png)
+
+Other drops, all justified in the audit file: identifiers and free text (`emp_title` has very high cardinality and can proxy for protected characteristics), `zip_code` and `addr_state` (geography can proxy for race and ethnicity; ECOA / Regulation B in the US, and the EU AI Act classes creditworthiness scoring as high-risk), {{ au.by_category.late_2015_field }} bureau fields that only exist from late 2015, and {{ au.by_category.joint_applicant }} joint-applicant fields.
+
+### 4.3 LightGBM beats the incumbent grade; the scorecard roughly matches it
+
+| Test window ({{ test.n | num }} loans) | LC sub-grade | Scorecard ({{ md.scorecard.n_characteristics }} characteristics) | LightGBM ({{ md.lgbm.n_features }} features) |
+|---|---|---|---|
+| AUC | {{ md.grade.auc | dec(3) }} | {{ md.scorecard.auc | dec(3) }} | {{ md.lgbm.auc | dec(3) }} |
+| Gini | {{ md.grade.gini | dec(3) }} | {{ md.scorecard.gini | dec(3) }} | {{ md.lgbm.gini | dec(3) }} |
+| KS | {{ md.grade.ks | dec(3) }} | {{ md.scorecard.ks | dec(3) }} | {{ md.lgbm.ks | dec(3) }} |
+| Brier score | {{ md.grade.brier | dec(4) }} | {{ md.scorecard.brier | dec(4) }} | {{ md.lgbm.brier | dec(4) }} |
+| Mean PD vs observed | {{ md.grade.mean_pd | pct }} vs {{ md.grade.observed | pct }} | {{ md.scorecard.mean_pd | pct }} vs {{ md.scorecard.observed | pct }} | {{ md.lgbm.mean_pd | pct }} vs {{ md.lgbm.observed | pct }} |
+| PSI of the score, train vs test | {{ md.grade.psi_train_test | dec(3) }} | {{ md.scorecard.psi_train_test | dec(3) }} | {{ md.lgbm.psi_train_test | dec(3) }} |
+| Defaults caught by declining the riskiest 10% | {{ md.capture_at_10pct.grade | pct }} | {{ md.capture_at_10pct.scorecard | pct }} | {{ md.capture_at_10pct.lgbm | pct }} |
+
+The AUC gain over the grade is modest ({{ md.incremental.auc_lift_lgbm_vs_grade | dec(3) }}), as expected when the incumbent already uses FICO and bureau data. It is still information the grade does not have: inside grades A to E, the default rate of the model's riskiest fifth is {{ md.within_grade_ratio_min | ratio }} to {{ md.within_grade_ratio_max | ratio }} that of its safest fifth, and a logistic blend of LightGBM and the sub-grade reaches {{ md.incremental.auc_lgbm_plus_grade | dec(3) }} on test. Before recalibration, both models under-predicted 2015 defaults (LightGBM mean PD {{ md.lgbm.mean_pd_uncalibrated | pct }} against {{ md.lgbm.observed | pct }} observed), because they learned from a calmer period; Platt scaling on January-June 2015 fixes the level without changing the ranking. The scorecard's simplicity costs it {{ md.incremental.auc_lift_lgbm_vs_scorecard | dec(3) }} of AUC against LightGBM.
+
+![Default rate inside each grade](reports/figures/within_grade_spread.png)
+
+| ![Calibration](reports/figures/calibration_test.png) | ![Defaults avoided](reports/figures/default_capture_curve.png) |
+|---|---|
+
+### 4.4 FICO, loan size relative to income and recent credit-seeking drive the score
+
+The five features with the largest mean absolute SHAP value are: {{ m.shap.top_labels | join("; ") }}. Together they carry {{ m.shap.top_share_of_total | pct(0) }} of the total effect. The dependence plots show sensible, monotonic shapes: risk falls steadily with FICO and rises with loan-to-income and with the number of accounts opened recently. Each applicant's largest positive contributions become reason codes, for example for one declined applicant: "{{ m.shap.examples.declined.reasons[0] }}"; "{{ m.shap.examples.declined.reasons[1] }}".
+
+| ![SHAP beeswarm](reports/figures/shap_beeswarm.png) | ![SHAP waterfall](reports/figures/shap_waterfall_declined.png) |
+|---|---|
+
+![SHAP dependence](reports/figures/shap_dependence.png)
+
+### 4.5 Price does not cover risk at the top of the book
+
+With base assumptions a loan breaks even at PD = (G - costs) / (G + L): {{ a.breakeven_pd["<8%"] | pct(0) }} for loans priced under 8%, {{ a.breakeven_pd["20%+"] | pct(0) }} for loans priced at 20% or more. On the test window, loans priced at 20% or more defaulted {{ p.by_band["20%+"].default_rate | pct }} of the time, for a realized profit of {{ p.by_band["20%+"].realized_profit | usd }}. Ranking applicants by expected margin (which rewards high prices) instead of by PD changed realized profit by {{ p.price_aware.gap_vs_pd_cutoff | susd }} at the same approval rate, so the recommended rule is a plain PD cutoff.
+
+![Break-even PD by rate band](reports/figures/breakeven_by_band.png)
+
+## 5. Recommendation and expected impact
+
+**Decline applications with a LightGBM PD above {{ rec.pd_cutoff | pct }}** (the "balanced" option). The cutoff maximises expected profit on January-June 2015 subject to approving at least {{ rec.min_volume | pct(0) }} of applicants, the committee's volume constraint. It was then applied once to the July-December 2015 loans:
+
+| Test window, Jul-Dec 2015 | Approve all (today) | Decline grades D-G | Conservative | **Balanced (recommended)** | Growth |
+|---|---|---|---|---|---|
+| PD cutoff | none | n/a | {{ cons.pd_cutoff | pct }} | **{{ rec.pd_cutoff | pct }}** | {{ grow.pd_cutoff | pct }} |
+| Approval rate | {{ sq.approval_rate | pct }} | {{ dg.grade_rule.approval_rate | pct }} | {{ cons.approval_rate | pct }} | **{{ rec.approval_rate | pct }}** | {{ grow.approval_rate | pct }} |
+| Dollar volume kept | {{ sq.volume_share | pct }} | {{ dg.grade_rule.volume_share | pct }} | {{ cons.volume_share | pct }} | **{{ rec.volume_share | pct }}** | {{ grow.volume_share | pct }} |
+| Default rate, approved | {{ sq.default_rate | pct }} | {{ dg.grade_rule.default_rate | pct }} | {{ cons.default_rate | pct }} | **{{ rec.default_rate | pct }}** | {{ grow.default_rate | pct }} |
+| Net credit loss | {{ sq.net_credit_loss | usd }} | {{ dg.grade_rule.net_credit_loss | usd }} | {{ cons.net_credit_loss | usd }} | **{{ rec.net_credit_loss | usd }}** | {{ grow.net_credit_loss | usd }} |
+| Realized profit (half-year) | {{ sq.realized_profit | usd }} | {{ dg.grade_rule.realized_profit | usd }} | {{ cons.realized_profit | usd }} | **{{ rec.realized_profit | usd }}** | {{ grow.realized_profit | usd }} |
+
+At the same approval rate as the "decline grades D-G" rule ({{ dg.grade_rule.approval_rate | pct }}), a LightGBM cutoff earns {{ dg.lgbm_same_rate.realized_profit | usd }} against {{ dg.grade_rule.realized_profit | usd }}, with a default rate of {{ dg.lgbm_same_rate.default_rate | pct }} against {{ dg.grade_rule.default_rate | pct }}. The scorecard at the balanced approval rate adds {{ p.scorecard_balanced.profit_change | susd }} against LightGBM's {{ rec.profit_change | susd }}: the price of the simpler model.
+
+**What the recommended cutoff declines:** {{ rec.declined_n | num }} applicants, of whom {{ rec.declined_default_rate | pct }} defaulted. It gives up {{ rec.good_profit_forgone | usd }} of profit on {{ rec.good_loans_declined | num }} good loans and avoids larger losses on the rest, for a net realized gain of {{ rec.profit_change | susd }} in six months.
+
+**Annual view.** The test window covers six months, so annual figures double it: a book of {{ p.annualisation.annual_loans | num }} loans and {{ p.annualisation.annual_amount | usd }} a year. Under base assumptions that is {{ p.annual.profit_change | susd }} profit, {{ p.annual.loss_avoided | usd }} of net credit losses and {{ p.annual.defaults_avoided | num }} defaults avoided, for {{ p.annual.volume_lost | usd }} less lending.
+
+**Assumptions (G and L measured on 2012-2014 loans; costs are editable in the simulator):**
+
+| Assumption | Low (favourable) | Base | High (adverse) | Source |
+|---|---|---|---|---|
+| G: net interest earned per $ on loans that pay off, 11-14% band | {{ a.G_high["11-14%"] | pct }} | {{ a.G["11-14%"] | pct }} | {{ a.G_low["11-14%"] | pct }} | Best / pooled / worst training year |
+| L: net loss per $ on a defaulted loan | {{ a.L_low | pct }} | {{ a.L | pct }} | {{ a.L_high | pct }} | Best / pooled / worst training year |
+| Cost of funds, annual | {{ a.cost_of_funds.low | pct }} | {{ a.cost_of_funds.base | pct }} | {{ a.cost_of_funds.high | pct }} | Assumption |
+| Principal-years outstanding per $ lent | {{ a.principal_years | dec }} | {{ a.principal_years | dec }} | {{ a.principal_years | dec }} | Interest received / rate, training |
+| Operating cost, share of principal | {{ a.opex.low | pct }} | {{ a.opex.base | pct }} | {{ a.opex.high | pct }} | Assumption |
+| **Annual profit gain of the balanced cutoff (realized cash)** | **{{ p.scenarios.low.annual_realized_profit_change | susd }}** | **{{ p.scenarios.base.annual_realized_profit_change | susd }}** | **{{ p.scenarios.high.annual_realized_profit_change | susd }}** | Test window x 2 |
+| Annual profit gain (expected, PD x assumptions) | {{ p.scenarios.low.annual_expected_profit_change | susd }} | {{ p.scenarios.base.annual_expected_profit_change | susd }} | {{ p.scenarios.high.annual_expected_profit_change | susd }} | Test window x 2 |
+
+Realized profit uses each loan's actual cash, so only the cost assumptions move it; expected profit also depends on G and L. The cash fields were checked before use: `total_pymnt` equals principal + interest + late fees + recoveries to within {{ p.cash.identity_max_abs_residual | dec }} dollars on every loan, and defaulted loans repaid {{ p.cash.bad_principal_repaid_share | pct }} of principal before charge-off. No time value of money is applied.
+
+**Expected vs realized.** Expected profit overstates realized profit by {{ p.expected_vs_realized_gap | pct }} of the test book. The main reason: 2015 defaults lost {{ p.drift.test.L | pct }} of principal against {{ a.L | pct }} in training. Read the expected numbers as optimistic, and the realized ones as what the policy would have earned on these loans.
+
+![Expected vs realized profit](reports/figures/expected_vs_realized.png)
+
+### The simulator
+
+The Streamlit app lets a credit manager pick the model, set the cutoff by approval rate or by PD, change every assumption, compare with a grade rule and read the reason codes of 200 test applicants. It reads only small precomputed files in `app/data/` and needs no model library at runtime.
+
+| ![Simulator: policy impact](reports/figures/app_policy.png) | ![Simulator: applicant explanations](reports/figures/app_applicant.png) |
+|---|---|
+
+## 6. Limitations and what I would do next
+
+- **Accepted loans only.** Applicants Lending Club rejected never received a loan, so their outcomes do not exist and there is no reject inference. The recommended policy can only tighten; approving segments Lending Club declined would need a test on live traffic.
+- **Selected population.** FICO starts at 660 and every borrower passed Lending Club's own filters. Results do not transfer to thin-file or subprime applicants.
+- **Pricing held fixed.** The analysis takes Lending Club's prices as given. The 20%+ band loses money at observed default rates; re-pricing it is a separate decision with its own demand effects.
+- **One credit cycle.** 2012-2015 was a benign period in the US. Losses on 2015 defaults already ran above the training calibration ({{ p.drift.test.L | pct }} vs {{ a.L | pct }}).
+- **Marketplace vs balance sheet.** Lending Club sold loans to investors; Northvale is framed as a lender funding its own book, so cost of funds and operating costs are assumptions, not data.
+- **Modest discrimination gain.** LightGBM adds {{ md.incremental.auc_lift_lgbm_vs_grade | dec(3) }} AUC over the sub-grade. Most of the value comes from using a calibrated PD and an explicit profit rule, not from model complexity.
+- **Fairness not yet tested.** Protected attributes are not in the data, so approval and error rates by group cannot be measured directly. A fair-lending review (for example with BISG proxies) would come before any deployment.
+- **No time value of money** in the P&L; a loan that defaults late is treated like one that defaults early.
+
+**Next:** a champion-challenger trial on live applications; monthly monitoring of score PSI (alert at {{ m.monitoring.psi_alert | dec }}; today {{ m.monitoring.score_psi_lgbm | dec(3) }}), vintage default curves and manual override rates; 60-month loans once enough vintages resolve; monotonic constraints in LightGBM so its shape can be signed off like a scorecard.
+
+## 7. How to reproduce
+
+Requirements: macOS or Linux, Python 3.11, Node 18+ (deck only), LibreOffice (`soffice`, PDF export), about 2 GB of free disk. On macOS, LightGBM needs OpenMP: `brew install libomp`.
+
+```bash
+make setup   # .venv, pinned requirements, npm ci for the deck builder
+make all     # data, build, analysis, notebooks, docs, deck, test
+```
+
+`make data` downloads the Kaggle bundle (about 1.3 GB, no login needed), extracts only the accepted-loans file and checks its SHA-256. A full `make setup && make all` from a fresh clone, with the raw file already in `data/raw/`, takes about 10 minutes on an Apple-silicon laptop. Seeds are fixed (`SEED = 42`); LightGBM runs with 4 threads in deterministic mode. Other targets: `make app` (simulator), `make deck-qa` (slide images), `make clean`.
+
+## 8. Repo map
+
+```
+northvale/
+  Makefile                      single entry point
+  sql/                          DuckDB queries: status by vintage, scope
+  src/northvale/
+    build.py                    raw CSV -> typed parquet (DuckDB, column projection)
+    scope.py                    censoring, vintages, grade mix vs within-grade decomposition
+    audit.py                    decision for every raw column, AUC screen, leakage demo
+    features.py                 application-time features and labels
+    models.py                   sub-grade benchmark, WoE scorecard, LightGBM, calibration, metrics
+    explain.py                  SHAP and reason codes
+    pnl.py                      cash checks, G and L, policy curves, cutoffs, scenarios
+    figures.py                  every chart (viz.py style)
+    analysis.py                 runs everything, writes reports/metrics.json
+    deck_content.py             deck text from metrics.json
+    render_docs.py fmt.py viz.py check_text.py
+  notebooks/                    01-06, narrative, executed by make notebooks
+  reports/metrics.json          every number quoted anywhere
+  reports/figures/ tables/      charts and supporting tables
+  docs/                         feature audit, data dictionary, decision log, model card, templates
+  app/                          Streamlit simulator + its small data files
+  deck/                         deck builder, spec, PPTX and PDF
+  tests/                        data assumptions and metric sanity checks
+```
+
+## Author
+
+Ali Chamas · MSc Digital Business & Analytics, EMLV (Paris) · [LinkedIn URL]
+
+Data: Lending Club loan data via Kaggle (`wordsforthewise/lending-club`), CC0. Northvale Credit is fictional; nothing here describes a real lender's results.

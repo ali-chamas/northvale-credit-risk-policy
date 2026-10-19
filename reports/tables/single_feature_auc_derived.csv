@@ -1,0 +1,7 @@
+column,single_feature_auc_train
+fico,0.5955249088406711
+credit_history_months,0.539493120845857
+emp_length_years,0.5282959672694237
+loan_to_income,0.5575816294202237
+revol_bal_to_income,0.5229584961421305
+sub_grade (LC benchmark),0.6502094483428588

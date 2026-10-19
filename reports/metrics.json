@@ -1,0 +1,939 @@
+{
+  "data": {
+    "raw_rows": 2260668,
+    "raw_columns": 151,
+    "scope_rows": 589635,
+    "joint_excluded": 239,
+    "non_terminal_excluded": 147,
+    "sample_rows": 589249,
+    "sample_amount": 7446567025.0,
+    "sample_default_rate": 0.1403226819,
+    "splits": {
+      "test": {
+        "n": 161997,
+        "default_rate": 0.14703976,
+        "amount": 2076167800.0,
+        "start": "2015-07",
+        "end": "2015-12"
+      },
+      "train": {
+        "n": 306462,
+        "default_rate": 0.132466668,
+        "amount": 3825931350.0,
+        "start": "2012-01",
+        "end": "2014-12"
+      },
+      "valid": {
+        "n": 120790,
+        "default_rate": 0.1512459641,
+        "amount": 1544467875.0,
+        "start": "2015-01",
+        "end": "2015-06"
+      }
+    }
+  },
+  "censoring": {
+    "scope_non_terminal_share": 0.0002493068,
+    "share_36m_2015": 0.0005191173,
+    "share_36m_2016": 0.2817168735,
+    "share_36m_2017": 0.5988034417,
+    "share_60m_2015": 0.3291860617,
+    "share_60m_2014": 0.1714504715
+  },
+  "vintage": {
+    "by_year": {
+      "2012": 0.135794801,
+      "2013": 0.1232598435,
+      "2014": 0.1372639478,
+      "2015": 0.1488364034
+    },
+    "n_by_year": {
+      "2012": 43470,
+      "2013": 100422,
+      "2014": 162570,
+      "2015": 282787
+    },
+    "min_quarter": "2013-Q4",
+    "min_quarter_rate": 0.1190744215,
+    "max_quarter": "2015-Q2",
+    "max_quarter_rate": 0.1538102208,
+    "decomposition_2013_2015": {
+      "year_from": 2013,
+      "year_to": 2015,
+      "default_rate_from": 0.1232598435,
+      "default_rate_to": 0.1488364034,
+      "change": 0.0255765599,
+      "mix_effect": -0.0055594687,
+      "rate_effect": 0.0311360286,
+      "share_ab_from": 0.5712891597,
+      "share_ab_to": 0.571967594
+    },
+    "by_grade": {
+      "A": {
+        "dr_2013": 0.0456117723,
+        "dr_2015": 0.0542368046,
+        "rate_2013": 0.0769946005,
+        "rate_2015": 0.0690238873,
+        "n_2013": 17057,
+        "n_2015": 70100
+      },
+      "B": {
+        "dr_2013": 0.0978592514,
+        "dr_2015": 0.118948115,
+        "rate_2013": 0.1180147496,
+        "rate_2015": 0.1001923269,
+        "n_2013": 40313,
+        "n_2015": 91645
+      },
+      "C": {
+        "dr_2013": 0.1529583283,
+        "dr_2015": 0.1944329524,
+        "rate_2013": 0.1538531163,
+        "rate_2015": 0.1324161853,
+        "n_2013": 24693,
+        "n_2015": 77348
+      },
+      "D": {
+        "dr_2013": 0.2039296794,
+        "dr_2015": 0.2621219542,
+        "rate_2013": 0.1866461565,
+        "rate_2015": 0.1663873179,
+        "n_2013": 14505,
+        "n_2015": 32668
+      },
+      "E": {
+        "dr_2013": 0.2330547818,
+        "dr_2015": 0.3284168081,
+        "rate_2013": 0.2157035593,
+        "rate_2015": 0.1910762946,
+        "n_2013": 3231,
+        "n_2015": 9424
+      },
+      "F": {
+        "dr_2013": 0.2680921053,
+        "dr_2015": 0.4241531664,
+        "rate_2013": 0.2391919408,
+        "rate_2015": 0.2353591311,
+        "n_2013": 608,
+        "n_2015": 1358
+      },
+      "G": {
+        "dr_2013": 0.2666666667,
+        "dr_2015": 0.4631147541,
+        "rate_2013": 0.2575133333,
+        "rate_2015": 0.2686180328,
+        "n_2013": 15,
+        "n_2015": 244
+      }
+    }
+  },
+  "audit": {
+    "n_columns": 151,
+    "by_category": {
+      "application": 58,
+      "post_origination": 38,
+      "joint_applicant": 16,
+      "late_2015_field": 14,
+      "lc_marketplace": 4,
+      "lc_pricing": 4,
+      "application_derived": 4,
+      "identifier": 3,
+      "scope": 3,
+      "free_text": 3,
+      "fairness": 2,
+      "split_key": 1,
+      "target": 1
+    },
+    "by_decision": {
+      "drop": 81,
+      "keep": 58,
+      "transformed": 4,
+      "P&L only": 2,
+      "scope filter": 2,
+      "benchmark only": 2,
+      "split only": 1,
+      "target": 1
+    },
+    "n_candidate_features": 63,
+    "n_post_origination": 38,
+    "flag_threshold": 0.7,
+    "n_flagged": 9,
+    "flagged": [
+      "last_fico_range_high",
+      "last_fico_range_low",
+      "recoveries",
+      "total_rec_prncp",
+      "last_pymnt_amnt",
+      "total_pymnt_inv",
+      "total_pymnt",
+      "last_pymnt_d",
+      "last_credit_pull_d"
+    ],
+    "flagged_all_post_origination_or_pricing": true,
+    "max_post_auc": 0.8941,
+    "max_post_column": "last_fico_range_high",
+    "max_app_auc": 0.5955249088,
+    "max_app_column": "fico",
+    "subgrade_auc_train": 0.6502094483,
+    "int_rate_auc_train": 0.645,
+    "zip_auc_train": 0.5587,
+    "last_fico_auc_train": 0.8941,
+    "total_rec_prncp_auc_train": 0.8138
+  },
+  "models": {
+    "grade": {
+      "auc": 0.6814097188,
+      "gini": 0.3628194376,
+      "ks": 0.2665075244,
+      "brier": 0.1189254837,
+      "mean_pd": 0.1448329052,
+      "observed": 0.14703976,
+      "psi_train_test": 0.0231478145,
+      "brier_skill": 0.0517751034
+    },
+    "scorecard": {
+      "auc": 0.6745784869,
+      "gini": 0.3491569739,
+      "ks": 0.2532627638,
+      "brier": 0.1192464727,
+      "mean_pd": 0.1450123442,
+      "observed": 0.14703976,
+      "brier_uncalibrated": 0.1194503392,
+      "mean_pd_uncalibrated": 0.134480195,
+      "psi_train_test": 0.0044374157,
+      "n_characteristics": 13,
+      "characteristics": [
+        "fico",
+        "annual_inc",
+        "bc_open_to_buy",
+        "tot_hi_cred_lim",
+        "acc_open_past_24mths",
+        "dti",
+        "num_tl_op_past_12m",
+        "loan_to_income",
+        "mort_acc",
+        "home_ownership",
+        "mo_sin_old_rev_tl_op",
+        "mths_since_recent_bc",
+        "mths_since_recent_inq"
+      ],
+      "n_iv_pass": 24,
+      "fit_seconds": 7,
+      "train_auc": 0.6627327868,
+      "brier_skill": 0.0492157721
+    },
+    "lgbm": {
+      "auc": 0.7008337996,
+      "gini": 0.4016675991,
+      "ks": 0.2918433096,
+      "brier": 0.1170977087,
+      "mean_pd": 0.1458198845,
+      "observed": 0.14703976,
+      "brier_uncalibrated": 0.1172728699,
+      "mean_pd_uncalibrated": 0.1349222212,
+      "psi_train_test": 0.0050222903,
+      "best_params": {
+        "num_leaves": 15,
+        "min_data_in_leaf": 1000
+      },
+      "best_iteration": 780,
+      "valid_auc": 0.6934500675,
+      "valid_auc_range": 0.0012138522,
+      "n_features": 63,
+      "train_auc": 0.7325885752,
+      "fit_seconds": 76,
+      "decile_1_rate": 0.0285185185,
+      "decile_10_rate": 0.3375925926,
+      "decile_ratio": 11.8376623377,
+      "max_decile_calibration_gap": 0.0087470219,
+      "brier_skill": 0.0663484457
+    },
+    "incremental": {
+      "within_grade_auc_lgbm": 0.6282826574,
+      "within_grade_auc_scorecard": 0.5998564337,
+      "auc_lgbm_plus_grade": 0.7096144675,
+      "auc_lift_lgbm_vs_grade": 0.0194240808,
+      "auc_lift_scorecard_vs_grade": -0.0068312318,
+      "auc_lift_lgbm_vs_scorecard": 0.0262553126,
+      "corr_lgbm_grade": 0.68317298
+    },
+    "scaling": {
+      "base_points": 600,
+      "base_odds": 50,
+      "pdo": 20,
+      "factor": 28.8539008178,
+      "offset": 487.1228762045
+    },
+    "selection": {
+      "iv_min": 0.02,
+      "corr_max": 0.7,
+      "min_gain": 0.0005,
+      "max_chars": 15
+    },
+    "within_grade": {
+      "A": {
+        "safest": 0.0167194427,
+        "riskiest": 0.0961367954,
+        "all": 0.0514756175
+      },
+      "B": {
+        "safest": 0.059391771,
+        "riskiest": 0.189177102,
+        "all": 0.1176586343
+      },
+      "C": {
+        "safest": 0.1212502862,
+        "riskiest": 0.2986031601,
+        "all": 0.1981129915
+      },
+      "D": {
+        "safest": 0.1643518519,
+        "riskiest": 0.3732638889,
+        "all": 0.2636726662
+      },
+      "E": {
+        "safest": 0.225,
+        "riskiest": 0.4614583333,
+        "all": 0.3353480617
+      }
+    },
+    "within_grade_ratio_min": 2.0509259259,
+    "within_grade_ratio_max": 5.75,
+    "capture_at_10pct": {
+      "lgbm": 0.2295969773,
+      "scorecard": 0.2086481948,
+      "grade": 0.2061293031
+    }
+  },
+  "leakage": {
+    "baseline_auc": 0.7008337996,
+    "auc_with_last_fico": 0.9475655086,
+    "auc_with_total_rec_prncp": 0.9997834104,
+    "jump_last_fico": 0.246731709,
+    "jump_total_rec_prncp": 0.2989496108
+  },
+  "pnl": {
+    "cash": {
+      "identity_max_abs_residual": 0.01,
+      "identity_share_within_1_cent": 1.0,
+      "good_principal_repaid_share": 0.999999998,
+      "bad_principal_repaid_share": 0.4202849044,
+      "bad_interest_share": 0.1418546959,
+      "bad_recoveries_share": 0.0753509425,
+      "bad_collection_fee_share": 0.0121190424,
+      "bad_with_recovery_share": 0.778049223,
+      "funded_equals_requested_share": 0.9999609673
+    },
+    "assumptions": {
+      "G": {
+        "<8%": 0.0951008901,
+        "8-11%": 0.130082366,
+        "11-14%": 0.168871352,
+        "14-17%": 0.2037335682,
+        "17-20%": 0.2459666285,
+        "20%+": 0.2905588229
+      },
+      "G_low": {
+        "<8%": 0.0933548358,
+        "8-11%": 0.128484439,
+        "11-14%": 0.1677361456,
+        "14-17%": 0.2017647643,
+        "17-20%": 0.239272037,
+        "20%+": 0.2870736983
+      },
+      "G_high": {
+        "<8%": 0.0983996994,
+        "8-11%": 0.1328898948,
+        "11-14%": 0.1738141071,
+        "14-17%": 0.2065219674,
+        "17-20%": 0.2548281747,
+        "20%+": 0.3061101912
+      },
+      "G_all": 0.1639541786,
+      "L": 0.3591474699,
+      "L_low": 0.351504566,
+      "L_high": 0.3829547464,
+      "L_by_band": {
+        "<8%": 0.3725196088,
+        "8-11%": 0.3535182633,
+        "11-14%": 0.35683923,
+        "14-17%": 0.3554483154,
+        "17-20%": 0.3641147308,
+        "20%+": 0.3712647913
+      },
+      "principal_years": 1.3029860659,
+      "cost_of_funds": {
+        "low": 0.03,
+        "base": 0.04,
+        "high": 0.06
+      },
+      "opex": {
+        "low": 0.005,
+        "base": 0.01,
+        "high": 0.02
+      },
+      "cost_rate_base": 0.0621194426,
+      "breakeven_pd": {
+        "<8%": 0.0726066408,
+        "8-11%": 0.1389181901,
+        "11-14%": 0.2021744395,
+        "14-17%": 0.2515880195,
+        "17-20%": 0.3038223475,
+        "20%+": 0.3516040752
+      },
+      "band_default_rate": {
+        "<8%": 0.0470111942,
+        "8-11%": 0.0869973323,
+        "11-14%": 0.1277271012,
+        "14-17%": 0.176277149,
+        "17-20%": 0.215850247,
+        "20%+": 0.2535408288
+      }
+    },
+    "status_quo": {
+      "n": 161997,
+      "approval_rate": 1.0,
+      "volume_share": 1.0,
+      "amount": 2076167800.0,
+      "default_rate": 0.14703976,
+      "n_defaults": 23820,
+      "net_credit_loss": 116938625.33093986,
+      "realized_profit": -1133233.0418300834,
+      "expected_profit": 22569699.235203452
+    },
+    "status_quo_valid": {
+      "n": 120790,
+      "approval_rate": 1.0,
+      "volume_share": 1.0,
+      "amount": 1544467875.0,
+      "default_rate": 0.1512459641,
+      "n_defaults": 18269,
+      "net_credit_loss": 86587396.94345212,
+      "realized_profit": 6136337.029776722,
+      "expected_profit": 18363460.641404208
+    },
+    "expected_vs_realized_gap": 0.0114166746,
+    "drift": {
+      "test": {
+        "G": {
+          "<8%": 0.0909062404,
+          "8-11%": 0.126049059,
+          "11-14%": 0.1646061357,
+          "14-17%": 0.2003589734,
+          "17-20%": 0.2245618625,
+          "20%+": 0.2781100555
+        },
+        "L": 0.3943076777,
+        "principal_years": 1.2739995667
+      },
+      "valid": {
+        "G": {
+          "<8%": 0.0933030156,
+          "8-11%": 0.126353953,
+          "11-14%": 0.1642521166,
+          "14-17%": 0.199538535,
+          "17-20%": 0.2317209034,
+          "20%+": 0.2802074696
+        },
+        "L": 0.3808953485,
+        "principal_years": 1.2769390618
+      }
+    },
+    "grade_rules": {
+      "Decline G": {
+        "grade_rule": {
+          "n": 161848,
+          "approval_rate": 0.9990802299,
+          "volume_share": 0.9993169025,
+          "amount": 2074749575.0,
+          "default_rate": 0.1466808363,
+          "n_defaults": 23740,
+          "net_credit_loss": 116537716.84273972,
+          "realized_profit": -830357.8328733528,
+          "expected_profit": 22582946.618825756
+        },
+        "lgbm_same_rate": {
+          "n": 161848,
+          "approval_rate": 0.9990802299,
+          "volume_share": 0.9988319947,
+          "amount": 2073742825.0,
+          "default_rate": 0.1466623004,
+          "n_defaults": 23737,
+          "net_credit_loss": 116299089.31794009,
+          "realized_profit": -554349.6045308253,
+          "expected_profit": 22954914.86770491
+        }
+      },
+      "Decline F-G": {
+        "grade_rule": {
+          "n": 161118,
+          "approval_rate": 0.9945739736,
+          "volume_share": 0.9958408949,
+          "amount": 2067532800.0,
+          "default_rate": 0.145390335,
+          "n_defaults": 23425,
+          "net_credit_loss": 115168538.42813978,
+          "realized_profit": -150848.1617856761,
+          "expected_profit": 22438986.6674093
+        },
+        "lgbm_same_rate": {
+          "n": 161118,
+          "approval_rate": 0.9945739736,
+          "volume_share": 0.9941323144,
+          "amount": 2063985500.0,
+          "default_rate": 0.1451482764,
+          "n_defaults": 23386,
+          "net_credit_loss": 114229597.9961401,
+          "realized_profit": 997130.5074387798,
+          "expected_profit": 24073881.429601837
+        }
+      },
+      "Decline E-G": {
+        "grade_rule": {
+          "n": 156320,
+          "approval_rate": 0.9649561412,
+          "volume_share": 0.9676089524,
+          "amount": 2008918550.0,
+          "default_rate": 0.1395598772,
+          "n_defaults": 21816,
+          "net_credit_loss": 106546004.60982978,
+          "realized_profit": 3101578.6211300706,
+          "expected_profit": 21426244.666795462
+        },
+        "lgbm_same_rate": {
+          "n": 156320,
+          "approval_rate": 0.9649561412,
+          "volume_share": 0.9648700722,
+          "amount": 2003232175.0,
+          "default_rate": 0.1379989765,
+          "n_defaults": 21572,
+          "net_credit_loss": 104638725.84742942,
+          "realized_profit": 6519761.117960616,
+          "expected_profit": 28316654.039748266
+        }
+      },
+      "Decline D-G": {
+        "grade_rule": {
+          "n": 139041,
+          "approval_rate": 0.8582936721,
+          "volume_share": 0.8659935266,
+          "amount": 1797947875.0,
+          "default_rate": 0.1241360462,
+          "n_defaults": 17260,
+          "net_credit_loss": 82570247.85872108,
+          "realized_profit": 7882656.31894994,
+          "expected_profit": 16957386.419435754
+        },
+        "lgbm_same_rate": {
+          "n": 139041,
+          "approval_rate": 0.8582936721,
+          "volume_share": 0.8668918042,
+          "amount": 1799812850.0,
+          "default_rate": 0.1193676685,
+          "n_defaults": 16597,
+          "net_credit_loss": 80131322.84992054,
+          "realized_profit": 16576591.068246474,
+          "expected_profit": 33975081.50098173
+        }
+      }
+    },
+    "options": {
+      "conservative": {
+        "n": 133580,
+        "approval_rate": 0.8245831713,
+        "volume_share": 0.8359432581,
+        "amount": 1735558475.0,
+        "default_rate": 0.1150771074,
+        "n_defaults": 15372,
+        "net_credit_loss": 74261760.22532085,
+        "realized_profit": 17636817.883216523,
+        "expected_profit": 34586144.93059119,
+        "pd_cutoff": 0.2272231106,
+        "valid_approval_rate": 0.8100008279,
+        "min_volume": null,
+        "default_rate_change": -0.0319626526,
+        "default_rate_rel_change": -0.2173742166,
+        "profit_change": 18770050.925046608,
+        "expected_profit_change": 12016445.695387736,
+        "loss_avoided": 42676865.10561901,
+        "defaults_avoided": 8448,
+        "volume_lost": 340609325.0,
+        "declined_n": 28417,
+        "declined_default_rate": 0.2972868353,
+        "declined_realized_profit": -18770050.925046604,
+        "good_loans_declined": 19969,
+        "good_profit_forgone": 30310213.672474712
+      },
+      "balanced": {
+        "n": 147422,
+        "approval_rate": 0.9100291981,
+        "volume_share": 0.9138744108,
+        "amount": 1897356625.0,
+        "default_rate": 0.127796394,
+        "n_defaults": 18840,
+        "net_credit_loss": 90892216.49912927,
+        "realized_profit": 12681234.786313176,
+        "expected_profit": 32231314.41641548,
+        "pd_cutoff": 0.2788043076,
+        "valid_approval_rate": 0.9,
+        "min_volume": 0.9,
+        "default_rate_change": -0.019243366,
+        "default_rate_rel_change": -0.1308718538,
+        "profit_change": 13814467.82814326,
+        "expected_profit_change": 9661615.181212027,
+        "loss_avoided": 26046408.831810594,
+        "defaults_avoided": 4980,
+        "volume_lost": 178811175.0,
+        "declined_n": 14575,
+        "declined_default_rate": 0.3416809605,
+        "declined_realized_profit": -13814467.828143261,
+        "good_loans_declined": 9595,
+        "good_profit_forgone": 16052695.161191862
+      },
+      "growth": {
+        "n": 155503,
+        "approval_rate": 0.9599128379,
+        "volume_share": 0.9600686298,
+        "amount": 1993263575.0,
+        "default_rate": 0.1368912497,
+        "n_defaults": 21287,
+        "net_credit_loss": 103143844.10882944,
+        "realized_profit": 7326058.176986765,
+        "expected_profit": 28803846.829819076,
+        "pd_cutoff": 0.3331568528,
+        "valid_approval_rate": 0.9549962745,
+        "min_volume": 0.95,
+        "default_rate_change": -0.0101485103,
+        "default_rate_rel_change": -0.0690188172,
+        "profit_change": 8459291.218816848,
+        "expected_profit_change": 6234147.594615623,
+        "loss_avoided": 13794781.22211042,
+        "defaults_avoided": 2533,
+        "volume_lost": 82904225.0,
+        "declined_n": 6494,
+        "declined_default_rate": 0.390052356,
+        "declined_realized_profit": -8459291.21881685,
+        "good_loans_declined": 3961,
+        "good_profit_forgone": 7351388.6027706545
+      }
+    },
+    "scorecard_balanced": {
+      "n": 147855,
+      "approval_rate": 0.9127020871,
+      "volume_share": 0.9227140383,
+      "amount": 1915709175.0,
+      "default_rate": 0.1311149437,
+      "n_defaults": 19386,
+      "net_credit_loss": 96017288.17853041,
+      "realized_profit": 8397243.784725353,
+      "expected_profit": 33092762.33642132,
+      "profit_change": 9530476.826555436
+    },
+    "price_aware": {
+      "realized_profit": 9939498.268870039,
+      "default_rate": 0.1336910366,
+      "approval_rate": 0.9100291981,
+      "gap_vs_pd_cutoff": -2741736.5174431372
+    },
+    "by_band": {
+      "<8%": {
+        "n": 39526,
+        "default_rate": 0.0514344988,
+        "realized_profit": 3212792.969764022,
+        "amount": 576482850.0
+      },
+      "8-11%": {
+        "n": 44876,
+        "default_rate": 0.1105490685,
+        "realized_profit": 5329363.647247528,
+        "amount": 565024275.0
+      },
+      "11-14%": {
+        "n": 48246,
+        "default_rate": 0.1826058119,
+        "realized_profit": -99243.9337373625,
+        "amount": 579752625.0
+      },
+      "14-17%": {
+        "n": 18826,
+        "default_rate": 0.2445554021,
+        "realized_profit": -3208649.1606308953,
+        "amount": 227420625.0
+      },
+      "17-20%": {
+        "n": 9226,
+        "default_rate": 0.3105354433,
+        "realized_profit": -5002539.403889993,
+        "amount": 114439275.0
+      },
+      "20%+": {
+        "n": 1297,
+        "default_rate": 0.4217424827,
+        "realized_profit": -1364957.1605833822,
+        "amount": 13048150.0
+      }
+    },
+    "recommended": "balanced",
+    "scenarios": {
+      "low": {
+        "G_mid": 0.1738141071,
+        "L": 0.351504566,
+        "cost_of_funds": 0.03,
+        "opex": 0.005,
+        "cost_rate": 0.044089582,
+        "status_quo_expected_profit": 69150797.04137161,
+        "policy_expected_profit": 74461535.63895608,
+        "expected_profit_change": 5310738.597584471,
+        "realized_profit_change": 10590527.258566543,
+        "status_quo_realized_profit": 36299783.09750703,
+        "annual_realized_profit_change": 21181054.517133087,
+        "annual_expected_profit_change": 10621477.195168942
+      },
+      "base": {
+        "G_mid": 0.168871352,
+        "L": 0.3591474699,
+        "cost_of_funds": 0.04,
+        "opex": 0.01,
+        "cost_rate": 0.0621194426,
+        "status_quo_expected_profit": 22569699.235203452,
+        "policy_expected_profit": 32231314.41641548,
+        "expected_profit_change": 9661615.181212027,
+        "realized_profit_change": 13814467.82814326,
+        "status_quo_realized_profit": -1133233.0418300834,
+        "annual_realized_profit_change": 27628935.65628652,
+        "annual_expected_profit_change": 19323230.362424053
+      },
+      "high": {
+        "G_mid": 0.1677361456,
+        "L": 0.3829547464,
+        "cost_of_funds": 0.06,
+        "opex": 0.02,
+        "cost_rate": 0.098179164,
+        "status_quo_expected_profit": -62463067.131972015,
+        "policy_expected_profit": -44547412.60670919,
+        "expected_profit_change": 17915654.525262825,
+        "realized_profit_change": 20262348.967296697,
+        "status_quo_realized_profit": -75999265.32050431,
+        "annual_realized_profit_change": 40524697.934593394,
+        "annual_expected_profit_change": 35831309.05052565
+      }
+    },
+    "annualisation": {
+      "months_in_test": 6,
+      "factor": 2.0,
+      "annual_loans": 323994.0,
+      "annual_amount": 4152335600.0
+    },
+    "annual": {
+      "profit_change": 27628935.65628652,
+      "loss_avoided": 52092817.66362119,
+      "defaults_avoided": 9960.0,
+      "volume_lost": 357622350.0,
+      "expected_profit_change": 19323230.362424053
+    },
+    "test_amount": 2076167800.0,
+    "test_n": 161997
+  },
+  "shap": {
+    "n_explained": 20000,
+    "base_logodds": -2.0771573204,
+    "top_features": [
+      "fico",
+      "loan_to_income",
+      "acc_open_past_24mths",
+      "dti",
+      "annual_inc"
+    ],
+    "top_labels": [
+      "FICO score at application",
+      "Loan amount / annual income",
+      "Accounts opened, last 24 months",
+      "Debt-to-income ratio (%)",
+      "Annual income"
+    ],
+    "top_share_of_total": 0.2790099191,
+    "n_features_used": 60,
+    "examples": {
+      "approved": {
+        "pd": 0.0488829828,
+        "grade": "B2",
+        "int_rate": 0.0917,
+        "loan_amnt": 9000.0,
+        "purpose": "debt_consolidation",
+        "decision": "approve",
+        "base_logodds": -2.0771573204,
+        "final_logodds": -3.1109805769,
+        "top": [
+          {
+            "feature": "fico",
+            "label": "FICO score at application",
+            "shap": -0.1823324439,
+            "value": 717.0,
+            "display": "717"
+          },
+          {
+            "feature": "home_ownership",
+            "label": "Home ownership",
+            "shap": -0.1011796518,
+            "value": "MORTGAGE",
+            "display": "mortgage"
+          },
+          {
+            "feature": "loan_to_income",
+            "label": "Loan amount / annual income",
+            "shap": -0.085988314,
+            "value": 0.1285714358,
+            "display": "13%"
+          },
+          {
+            "feature": "bc_open_to_buy",
+            "label": "Open-to-buy on bankcards",
+            "shap": -0.0750066787,
+            "value": 10213.0,
+            "display": "$10,213"
+          },
+          {
+            "feature": "tot_hi_cred_lim",
+            "label": "Total credit limit",
+            "shap": -0.06786208,
+            "value": 264410.0,
+            "display": "$264,410"
+          },
+          {
+            "feature": "acc_open_past_24mths",
+            "label": "Accounts opened, last 24 months",
+            "shap": -0.059883074,
+            "value": 3.0,
+            "display": "3"
+          },
+          {
+            "feature": "revol_bal_to_income",
+            "label": "Revolving balance / annual income",
+            "shap": -0.0552243473,
+            "value": 0.184628576,
+            "display": "18%"
+          },
+          {
+            "feature": "mths_since_recent_inq",
+            "label": "Months since last inquiry",
+            "shap": -0.0530212094,
+            "value": 11.0,
+            "display": "11"
+          }
+        ],
+        "other_shap": -0.3533254576,
+        "reasons": [
+          "5 instalment accounts (median 6)",
+          "100% of accounts never delinquent (median 100%)"
+        ],
+        "strengths": [
+          "FICO score of 717 (median applicant 692)",
+          "Home ownership: mortgage"
+        ]
+      },
+      "declined": {
+        "pd": 0.3464615244,
+        "grade": "A5",
+        "int_rate": 0.0789,
+        "loan_amnt": 16000.0,
+        "purpose": "major_purchase",
+        "decision": "decline",
+        "base_logodds": -2.0771573204,
+        "final_logodds": -0.6994067113,
+        "top": [
+          {
+            "feature": "fico",
+            "label": "FICO score at application",
+            "shap": 0.276911608,
+            "value": 667.0,
+            "display": "667"
+          },
+          {
+            "feature": "acc_open_past_24mths",
+            "label": "Accounts opened, last 24 months",
+            "shap": 0.1641168847,
+            "value": 7.0,
+            "display": "7"
+          },
+          {
+            "feature": "num_tl_op_past_12m",
+            "label": "Accounts opened, last 12 months",
+            "shap": 0.1340701416,
+            "value": 4.0,
+            "display": "4"
+          },
+          {
+            "feature": "purpose",
+            "label": "Loan purpose",
+            "shap": 0.1339044123,
+            "value": "major_purchase",
+            "display": "major purchase"
+          },
+          {
+            "feature": "dti",
+            "label": "Debt-to-income ratio (%)",
+            "shap": 0.1326082129,
+            "value": 23.9799995422,
+            "display": "24"
+          },
+          {
+            "feature": "mths_since_recent_bc",
+            "label": "Months since newest bankcard",
+            "shap": 0.1229549348,
+            "value": 3.0,
+            "display": "3"
+          },
+          {
+            "feature": "loan_amnt",
+            "label": "Loan amount requested",
+            "shap": 0.0884691374,
+            "value": 16000.0,
+            "display": "$16,000"
+          },
+          {
+            "feature": "home_ownership",
+            "label": "Home ownership",
+            "shap": 0.0834232186,
+            "value": "RENT",
+            "display": "rent"
+          }
+        ],
+        "other_shap": 0.2412920588,
+        "reasons": [
+          "FICO score of 667 (median applicant 692)",
+          "7 credit accounts opened in the last 24 months (median 4)",
+          "4 credit accounts opened in the last 12 months (median 2)"
+        ],
+        "strengths": [
+          "Newest revolving account opened 3 months ago (median 8)",
+          "Bankcard utilisation of 83% (median 69%)"
+        ]
+      }
+    },
+    "n_app_applicants": 200,
+    "medians": {
+      "fico": 692.0,
+      "dti": 16.7199993134,
+      "annual_inc": 60000.0,
+      "loan_to_income": 0.1839651614
+    }
+  },
+  "monitoring": {
+    "score_psi_lgbm": 0.0050222903,
+    "score_psi_scorecard": 0.0044374157,
+    "feature_psi": {
+      "fico": 0.0043874171,
+      "loan_to_income": 0.0056888061,
+      "acc_open_past_24mths": 0.0215385003,
+      "dti": 0.0276202831,
+      "annual_inc": 0.0077332026,
+      "percent_bc_gt_75": 0.0407576174,
+      "num_tl_op_past_12m": 0.0186928809,
+      "mths_since_recent_bc": 0.0029846909
+    },
+    "max_feature_psi": 0.0407576174,
+    "max_feature_psi_name": "percent_bc_gt_75",
+    "psi_alert": 0.25,
+    "psi_watch": 0.1
+  }
+}
