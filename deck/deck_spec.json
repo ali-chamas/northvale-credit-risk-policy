@@ -189,7 +189,7 @@
           "meta": "Dollar volume kept: 96.0%"
         }
       ],
-      "footnote": "Cutoffs chosen on Jan-Jun 2015 by expected profit; realized results on 161,997 Jul-Dec 2015 loans. Base cost assumptions.",
+      "footnote": "Conservative maximises expected profit; balanced does so while approving at least 90% of applicants, the committee's volume floor. Chosen on Jan-Jun 2015, judged on 161,997 Jul-Dec 2015 loans.",
       "notes": "Three options, all chosen on early 2015 data and judged on late 2015 loans. The conservative cutoff maximises expected profit but gives up 16% of dollar volume. I recommend the balanced option: it keeps 91% of applicants, as the committee asked, cuts the default rate from 14.7% to 12.8% and adds $13.8M of realized profit in six months. The growth option is the fallback if volume targets tighten. Because we only see loans Lending Club approved, every option tightens; none can safely approve new segments."
     },
     {

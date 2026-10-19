@@ -230,7 +230,8 @@ def build(m: dict) -> dict:
                  "text": f"Decline PD above {pct(grow['pd_cutoff'])}. Default rate {pct(grow['default_rate'])}. Per half-year vs today: profit {signed_usd(grow['profit_change'])}, losses avoided {usd(grow['loss_avoided'])}.",
                  "meta": f"Dollar volume kept: {pct(grow['volume_share'])}"},
             ],
-            "footnote": f"Cutoffs chosen on Jan-Jun 2015 by expected profit; realized results on {num(test['n'])} Jul-Dec 2015 loans. Base cost assumptions.",
+            "footnote": f"Conservative maximises expected profit; balanced does so while approving at least {pct(rec['min_volume'], 0)} of applicants, the committee's volume floor. "
+                        f"Chosen on Jan-Jun 2015, judged on {num(test['n'])} Jul-Dec 2015 loans.",
             "notes": (
                 "Three options, all chosen on early 2015 data and judged on late 2015 loans. The conservative cutoff maximises "
                 f"expected profit but gives up {pct(1 - cons['volume_share'], 0)} of dollar volume. I recommend the balanced option: it keeps "
