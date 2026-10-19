@@ -172,7 +172,7 @@ make setup   # .venv, pinned requirements, npm ci for the deck builder
 make all     # data, build, analysis, notebooks, docs, deck, test
 ```
 
-`make data` downloads the Kaggle bundle (about 1.3 GB, no login needed), extracts only the accepted-loans file and checks its SHA-256. A full `make setup && make all` from a fresh clone, with the raw file already in `data/raw/`, takes about 10 minutes on an Apple-silicon laptop. Seeds are fixed (`SEED = 42`); LightGBM runs with 4 threads in deterministic mode. Other targets: `make app` (simulator), `make deck-qa` (slide images), `make clean`.
+`make data` downloads the Kaggle bundle (about 1.3 GB, no login needed), extracts only the accepted-loans file and checks its SHA-256. A full `make setup && make all` from a fresh clone, with the raw file already in `data/raw/` and Python packages already in the pip cache, took 4 minutes on an Apple-silicon laptop (first-time package downloads add a few minutes). Seeds are fixed (`SEED = 42`); LightGBM runs with 4 threads in deterministic mode. Other targets: `make app` (simulator), `make deck-qa` (slide images), `make clean`.
 
 ## 8. Repo map
 
