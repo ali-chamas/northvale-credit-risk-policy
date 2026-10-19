@@ -1,0 +1,30 @@
+name: ci
+
+# Lint, unit tests and text checks on every push. The data-heavy steps (download,
+# build, analysis) need the 390 MB raw file and run locally with `make all`;
+# tests that need data/interim skip themselves here, while the metric sanity
+# tests run against the committed reports/metrics.json.
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install --no-deps -e .
+      - name: Lint
+        run: ruff check src tests app
+      - name: Tests
+        run: pytest -q
+      - name: Text checks
+        run: python -m northvale.check_text README.md INTERVIEW_NOTES.md DEPLOY.md deck/deck_spec.json docs/*.md
