@@ -37,7 +37,7 @@ The decision this informs: at what estimated probability of default (PD) should 
 
 ![Share of loans still running by vintage](reports/figures/censoring_by_vintage.png)
 
-**Known quirks.** Every loan in the file was approved by Lending Club, so the data says nothing about rejected applicants. FICO at application starts at 660 (Lending Club's floor). Many bureau fields (for example `tot_cur_bal`, `mort_acc`) only start in mid-2012, so they are empty for the first months of training; LightGBM and the scorecard's missing bin handle this. The 2.2M-row CSV is never loaded into pandas: DuckDB reads only the columns each query needs.
+**Known quirks.** Every loan in the file was approved by Lending Club, so the data says nothing about rejected applicants. FICO at application starts at 660 (Lending Club's floor). Many bureau fields (for example `tot_cur_bal`, `mort_acc`) only start in mid-2012, so they are empty for the first months of training; LightGBM and the scorecard's missing bin handle this. The 2.26M-row CSV is never loaded into pandas: DuckDB reads only the columns each query needs.
 
 ## 3. Approach
 

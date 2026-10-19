@@ -8,14 +8,8 @@
     "sample_rows": 589249,
     "sample_amount": 7446567025.0,
     "sample_default_rate": 0.1403226819,
+    "fico_min": 660.0,
     "splits": {
-      "test": {
-        "n": 161997,
-        "default_rate": 0.14703976,
-        "amount": 2076167800.0,
-        "start": "2015-07",
-        "end": "2015-12"
-      },
       "train": {
         "n": 306462,
         "default_rate": 0.132466668,
@@ -29,6 +23,13 @@
         "amount": 1544467875.0,
         "start": "2015-01",
         "end": "2015-06"
+      },
+      "test": {
+        "n": 161997,
+        "default_rate": 0.14703976,
+        "amount": 2076167800.0,
+        "start": "2015-07",
+        "end": "2015-12"
       }
     }
   },
@@ -218,7 +219,6 @@
         "mths_since_recent_inq"
       ],
       "n_iv_pass": 24,
-      "fit_seconds": 7,
       "train_auc": 0.6627327868,
       "brier_skill": 0.0492157721
     },
@@ -241,7 +241,6 @@
       "valid_auc_range": 0.0012138522,
       "n_features": 63,
       "train_auc": 0.7325885752,
-      "fit_seconds": 76,
       "decile_1_rate": 0.0285185185,
       "decile_10_rate": 0.3375925926,
       "decile_ratio": 11.8376623377,

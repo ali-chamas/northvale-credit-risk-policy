@@ -5,7 +5,7 @@ Northvale Credit is fictional; this card documents a learning project on public 
 
 **Purpose.** Estimate the probability that a new 36-month unsecured personal loan applicant defaults (Charged Off or Default) over the life of the loan, to support an approve / decline decision at a PD cutoff of {{ rec.pd_cutoff | pct }}.
 
-**Not for:** pricing, credit limits, 60-month loans, joint applications, applicants below FICO 660, or any population outside Lending Club's 2012-2015 approved borrowers.
+**Not for:** pricing, credit limits, 60-month loans, joint applications, applicants below FICO {{ d.fico_min | num }}, or any population outside Lending Club's 2012-2015 approved borrowers.
 
 **Training data.** {{ d.splits.train.n | num }} resolved loans issued 2012-2014 ({{ d.splits.train.default_rate | pct }} default). Validation {{ d.splits.valid.n | num }} loans (Jan-Jun 2015), test {{ test.n | num }} loans (Jul-Dec 2015). Only fields known at application are used ({{ md.lgbm.n_features }} features; see `data_dictionary.md` and `feature_audit.csv`).
 

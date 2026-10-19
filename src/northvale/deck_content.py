@@ -268,7 +268,7 @@ def build(m: dict) -> dict:
             "columns": [
                 {"heading": "Data limits", "bullets": [
                     "Approved loans only: no reject inference",
-                    "FICO floor of 660: no subprime or thin-file view",
+                    f"FICO floor of {num(d['fico_min'])}: no subprime or thin-file view",
                     f"2015 losses ran above training: {pct(p['drift']['test']['L'])} vs {pct(p['assumptions']['L'])}",
                     "Marketplace data used as a balance-sheet lender",
                 ]},

@@ -114,3 +114,20 @@ def test_app_files_are_small_and_complete():
     assert sum((C.APP_DATA / f).stat().st_size for f in files) < 20e6
     s = pd.read_parquet(C.APP_DATA / "scored_test.parquet")
     assert {"pd_lgbm", "pd_scorecard", "pd_grade", "net_cash", "funded_amnt", "target", "grade", "int_rate"} <= set(s.columns)
+
+
+def test_docs_are_the_render_of_current_metrics(m):
+    """README, interview notes and rendered docs must not be edited by hand."""
+    from northvale.render_docs import ROOT, render_all
+
+    for name, text in render_all().items():
+        assert (ROOT / name).read_text() == text, f"{name} differs from its template: run make docs"
+
+
+def test_deck_spec_is_the_build_of_current_metrics(m):
+    import json
+
+    from northvale.deck_content import build
+
+    spec = json.loads((C.ROOT / "deck" / "deck_spec.json").read_text())
+    assert spec == json.loads(json.dumps(build(m), ensure_ascii=False)), "deck_spec.json is stale: run make deck"

@@ -174,12 +174,13 @@ with tab_policy:
 
 # ---------------------------------------------------------------- applicant tab
 with tab_app:
-    st.markdown(
-        "Explanations come from SHAP values of the LightGBM model for 200 test-window applicants "
-        "(120 approved and 80 declined at the recommended cutoff). Reasons are the features that raised the "
-        "applicant's score the most compared with the average applicant: the basis for an adverse-action notice."
-    )
     apps = RC["applicants"]
+    n_ok = sum(a["decision"] == "approve" for a in apps)
+    st.markdown(
+        f"Explanations come from SHAP values of the LightGBM model for {len(apps)} test-window applicants "
+        f"({n_ok} approved and {len(apps) - n_ok} declined at the recommended cutoff). Reasons are the features that "
+        "raised the applicant's score the most compared with the average applicant: the basis for an adverse-action notice."
+    )
     labels = [f"{x['applicant']} · {x['sub_grade']} · PD {x['pd'] * 100:.1f}%" for x in apps]
     i = st.selectbox("Applicant", range(len(apps)), format_func=lambda k: labels[k], index=len(apps) - 5)
     x = apps[i]

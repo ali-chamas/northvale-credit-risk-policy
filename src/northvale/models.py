@@ -223,7 +223,7 @@ def search_lgbm(Xtr, ytr, Xva, yva) -> tuple[lgb.Booster, dict, pd.DataFrame]:
         t0 = time.time()
         bst = fit_lgbm(Xtr, ytr, Xva, yva, g)
         auc = roc_auc_score(yva, bst.predict(Xva, num_iteration=bst.best_iteration))
-        rows.append({**g, "best_iteration": bst.best_iteration, "valid_auc": auc, "seconds": round(time.time() - t0, 1)})
+        rows.append({**g, "best_iteration": bst.best_iteration, "valid_auc": auc})
         print(f"  lgbm {g} -> valid AUC {auc:.4f} at {bst.best_iteration} trees ({time.time() - t0:.0f}s)")
         if best is None or auc > best[1]:
             best = (bst, auc, g)
@@ -265,7 +265,6 @@ def run(df: pd.DataFrame) -> dict:
     res["scorecard"]["n_characteristics"] = len(chars)
     res["scorecard"]["characteristics"] = chars
     res["scorecard"]["n_iv_pass"] = int((bp.summary()["iv"].astype(float) >= IV_MIN).sum())
-    res["scorecard"]["fit_seconds"] = round(time.time() - t0)
     print(f"models: scorecard {len(chars)} characteristics, test AUC {res['scorecard']['auc']:.4f} ({time.time() - t0:.0f}s)")
     with open(C.MODELS / "scorecard.pkl", "wb") as f:
         pickle.dump({"binning": bp, "model": sc, "chars": chars, "platt": (cal_sc.a, cal_sc.b)}, f)
@@ -289,7 +288,6 @@ def run(df: pd.DataFrame) -> dict:
     res["lgbm"]["valid_auc_range"] = float(grid["valid_auc"].max() - grid["valid_auc"].min())
     res["lgbm"]["n_features"] = len(F.FEATURES)
     res["lgbm"]["train_auc"] = float(roc_auc_score(ytr, raw_lgb["train"]))
-    res["lgbm"]["fit_seconds"] = round(time.time() - t0)
     res["grade"]["psi_train_test"] = psi(tr["sub_grade_rank"], te["sub_grade_rank"])
     res["scorecard"]["train_auc"] = float(roc_auc_score(ytr, -s_tr))
     with open(C.MODELS / "calibration.json", "w") as f:

@@ -37,7 +37,7 @@ The decision this informs: at what estimated probability of default (PD) should 
 
 ![Share of loans still running by vintage](reports/figures/censoring_by_vintage.png)
 
-**Known quirks.** Every loan in the file was approved by Lending Club, so the data says nothing about rejected applicants. FICO at application starts at 660 (Lending Club's floor). Many bureau fields (for example `tot_cur_bal`, `mort_acc`) only start in mid-2012, so they are empty for the first months of training; LightGBM and the scorecard's missing bin handle this. The 2.2M-row CSV is never loaded into pandas: DuckDB reads only the columns each query needs.
+**Known quirks.** Every loan in the file was approved by Lending Club, so the data says nothing about rejected applicants. FICO at application starts at {{ d.fico_min | num }} (Lending Club's floor). Many bureau fields (for example `tot_cur_bal`, `mort_acc`) only start in mid-2012, so they are empty for the first months of training; LightGBM and the scorecard's missing bin handle this. The {{ d.raw_rows | compact(2) }}-row CSV is never loaded into pandas: DuckDB reads only the columns each query needs.
 
 ## 3. Approach
 
@@ -143,7 +143,7 @@ Realized profit uses each loan's actual cash, so only the cost assumptions move 
 
 ### The simulator
 
-The Streamlit app lets a credit manager pick the model, set the cutoff by approval rate or by PD, change every assumption, compare with a grade rule and read the reason codes of 200 test applicants. It reads only small precomputed files in `app/data/` and needs no model library at runtime.
+The Streamlit app lets a credit manager pick the model, set the cutoff by approval rate or by PD, change every assumption, compare with a grade rule and read the reason codes of {{ m.shap.n_app_applicants }} test applicants. It reads only small precomputed files in `app/data/` and needs no model library at runtime.
 
 | ![Simulator: policy impact](reports/figures/app_policy.png) | ![Simulator: applicant explanations](reports/figures/app_applicant.png) |
 |---|---|
@@ -151,7 +151,7 @@ The Streamlit app lets a credit manager pick the model, set the cutoff by approv
 ## 6. Limitations and what I would do next
 
 - **Accepted loans only.** Applicants Lending Club rejected never received a loan, so their outcomes do not exist and there is no reject inference. The recommended policy can only tighten; approving segments Lending Club declined would need a test on live traffic.
-- **Selected population.** FICO starts at 660 and every borrower passed Lending Club's own filters. Results do not transfer to thin-file or subprime applicants.
+- **Selected population.** FICO starts at {{ d.fico_min | num }} and every borrower passed Lending Club's own filters. Results do not transfer to thin-file or subprime applicants.
 - **Pricing held fixed.** The analysis takes Lending Club's prices as given. The 20%+ band loses money at observed default rates; re-pricing it is a separate decision with its own demand effects.
 - **One credit cycle.** 2012-2015 was a benign period in the US. Losses on 2015 defaults already ran above the training calibration ({{ p.drift.test.L | pct }} vs {{ a.L | pct }}).
 - **Marketplace vs balance sheet.** Lending Club sold loans to investors; Northvale is framed as a lender funding its own book, so cost of funds and operating costs are assumptions, not data.

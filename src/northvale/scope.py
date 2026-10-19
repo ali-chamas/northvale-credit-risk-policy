@@ -12,6 +12,7 @@ TERMINAL = ("Fully Paid", "Charged Off", "Default")
 
 def _q(sql: str) -> pd.DataFrame:
     con = duckdb.connect()
+    con.execute("SET threads = 1")  # multi-threaded float sums differ in the last digit between runs
     df = con.execute(sql).df()
     con.close()
     return df
@@ -133,6 +134,7 @@ def run() -> dict:
             "sample_rows": int(flow["sample"].sum()),
             "sample_amount": float(sum(s["amount"] for s in splits.values())),
             "sample_default_rate": float(_q(f"SELECT avg(target) FROM '{C.LOANS}' WHERE in_sample").iloc[0, 0]),
+            "fico_min": float(_q(f"SELECT min(fico_range_low) FROM '{C.LOANS}' WHERE in_sample").iloc[0, 0]),
             "splits": splits,
         },
         "censoring": {

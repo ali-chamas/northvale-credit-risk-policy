@@ -38,7 +38,8 @@ class _Dot(dict):
         return _Dot(v) if isinstance(v, dict) else v
 
 
-def main() -> None:
+def render_all() -> dict[str, str]:
+    """{output path relative to the repo root: rendered text} for every template."""
     metrics = _Dot(json.loads(METRICS.read_text()))
     env = Environment(
         loader=FileSystemLoader(TEMPLATES),
@@ -49,11 +50,17 @@ def main() -> None:
     )
     env.filters.update(fmt.FILTERS)
     # Top-level templates render to the repo root; templates/docs/* render into docs/.
+    out = {}
     for tpl in sorted(TEMPLATES.rglob("*.md.j2")):
         rel = tpl.relative_to(TEMPLATES).as_posix()
         name = rel[: -len(".j2")]
-        text = env.get_template(rel).render(m=metrics)
-        (ROOT / name).write_text(HEADER.format(name=name) + text)
+        out[name] = HEADER.format(name=name) + env.get_template(rel).render(m=metrics)
+    return out
+
+
+def main() -> None:
+    for name, text in render_all().items():
+        (ROOT / name).write_text(text)
         print(f"rendered {name}")
 
 
