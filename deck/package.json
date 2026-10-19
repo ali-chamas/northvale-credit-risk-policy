@@ -1,0 +1,11 @@
+{
+  "name": "deck-builder",
+  "private": true,
+  "description": "Renders deck/deck_spec.json into a PPTX. Content and numbers come from the Python pipeline.",
+  "scripts": {
+    "build": "node build_deck.js deck_spec.json deck.pptx"
+  },
+  "dependencies": {
+    "pptxgenjs": "4.0.1"
+  }
+}

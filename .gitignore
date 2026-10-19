@@ -1,0 +1,16 @@
+.venv/
+node_modules/
+data/raw/
+data/interim/
+*.duckdb
+*.duckdb.wal
+.ipynb_checkpoints/
+.DS_Store
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+deck/*.jpg
+deck/.~lock*
+.lo_profile/
+deck/qa/
