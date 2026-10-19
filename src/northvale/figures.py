@@ -372,18 +372,8 @@ SHORT = {
 
 
 def _short_value(t: dict) -> str:
-    v, f = t["value"], t["feature"]
-    lab = SHORT.get(f, _lab(f))
-    if v is None:
-        return f"{lab}: missing"
-    if isinstance(v, str):
-        return f"{lab}: {v.replace('_', ' ').lower()}"
-    if f in ("annual_inc", "bc_open_to_buy", "tot_hi_cred_lim", "loan_amnt", "avg_cur_bal", "revol_bal", "total_bc_limit",
-             "tot_cur_bal", "total_rev_hi_lim", "total_bal_ex_mort", "total_il_high_credit_limit"):
-        return f"{lab}: ${v:,.0f}"
-    if f in ("loan_to_income", "revol_bal_to_income"):
-        return f"{lab}: {v * 100:.0f}%"
-    return f"{lab}: {v:,.0f}" if abs(v) >= 10 or float(v).is_integer() else f"{lab}: {v:.1f}"
+    from .explain import display_value
+    return f"{SHORT.get(t['feature'], _lab(t['feature']))}: {display_value(t['feature'], t['value'])}"
 
 
 # ---------------------------------------------------------------- 06 policy
@@ -476,4 +466,29 @@ def scenarios(scen: pd.DataFrame, name="scenario_impact", size="half"):
     ax.set_ylim(0, t["annual_realized_profit_change"].max() * 1.2)
     viz.titles(ax, "Annual profit gain of the balanced policy vs approve-all", "Realized test-window gain x2, by cost and loss scenario")
     _src(fig, "Same cutoff in every scenario; scenarios change costs, G and L")
+    return viz.save(fig, name, C.FIGURES)
+
+
+def eda_drivers(tables: dict, name="eda_default_drivers", size="full"):
+    """Small multiples: default rate by band for four application fields (training window)."""
+    import matplotlib.pyplot as plt2
+    fig, axes = plt2.subplots(1, len(tables), figsize=viz.SIZES[size], layout="constrained", sharey=True)
+    titles = {"fico": "FICO score", "dti": "Debt-to-income (%)", "loan_to_income": "Loan / annual income",
+              "acc_open_past_24mths": "Accounts opened, 24 months", "purpose": "Loan purpose"}
+    for ax, (col, t) in zip(axes, tables.items(), strict=True):
+        t = t[t[col] != "missing"]
+        labels = [str(x).replace("_", " ") for x in t[col]]
+        hi = t["default_rate"].idxmax()
+        colors = [ACC if i == hi else viz.CONTEXT for i in t.index]
+        bars = ax.bar(range(len(t)), t["default_rate"], color=colors, width=0.7)
+        viz.label_bars(ax, [bars[list(t.index).index(hi)]], fmt=lambda v: f"{v * 100:.0f}%", size=9.5)
+        ax.set_xticks(range(len(t)), labels, rotation=35, ha="right", fontsize=9)
+        ax.yaxis.set_major_locator(MultipleLocator(0.05))
+        ax.set_title(titles.get(col, col), fontsize=11.5, loc="left", pad=8)
+        viz.pct_axis(ax)
+    axes[0].set_ylabel("Default rate")
+    fig.suptitle("Default rate by application field, training window 2012-2014", x=0.01, ha="left",
+                 fontsize=13, fontweight="bold", color=viz.INK)
+    n = int(next(iter(tables.values()))["n_loans"].sum())
+    viz.note(fig, f"Source: Lending Club, 36-month loans issued 2012-2014 ({n:,} loans)")
     return viz.save(fig, name, C.FIGURES)

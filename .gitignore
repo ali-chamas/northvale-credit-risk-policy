@@ -14,3 +14,4 @@ deck/*.jpg
 deck/.~lock*
 .lo_profile/
 deck/qa/
+*.egg-info/

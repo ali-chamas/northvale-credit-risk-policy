@@ -12,7 +12,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from . import audit, explain, models, pnl, scope
+from . import audit, eda, explain, models, pnl, scope
 from . import config as C
 from . import features as F
 from . import figures as G
@@ -40,10 +40,12 @@ def main() -> None:
     for k in ("data", "censoring", "vintage"):
         M.update(k, s[k])
     G.censoring(scope.censoring_table())
+    G.censoring(scope.censoring_table(), name="censoring_by_vintage_wide", size="finding")
     G.default_by_quarter(scope.vintage_table("quarter"))
     gy = scope.grade_year_table()
     G.grade_drift(gy, "default_rate", "Default rate by grade", "36-month loans, 2013 vs 2015 vintage", "grade_drift_default")
     G.grade_drift(gy, "avg_rate", "Average interest rate by grade", "36-month loans, 2013 vs 2015 vintage", "grade_drift_price")
+    G.eda_drivers({c: eda.rate_table(df, c) for c in ("fico", "dti", "loan_to_income", "acc_open_past_24mths")})
     t = _step("scope", t)
 
     # 2. Feature audit + single-feature AUC screen
@@ -59,6 +61,8 @@ def main() -> None:
     G.capture_curve(test)
     _, wg = G.within_grade(test)
     res["within_grade"] = {r["grade"]: {"safest": r["safest"], "riskiest": r["riskiest"], "all": r["all"]} for _, r in wg.iterrows()}
+    ratios = wg["riskiest"] / wg["safest"]
+    res["within_grade_ratio_min"], res["within_grade_ratio_max"] = float(ratios.min()), float(ratios.max())
     deciles = {m: pd.read_csv(C.TABLES / f"deciles_{m}_test.csv") for m in ("lgbm", "scorecard")}
     G.calibration(deciles)
     G.decile_bars(deciles["lgbm"])
@@ -118,7 +122,8 @@ def main() -> None:
         "psi_alert": 0.25, "psi_watch": 0.10,
     })
     pd.Series(feat_psi, name="psi_train_vs_test").to_csv(C.TABLES / "feature_psi.csv")
-    _step("monitoring", t)
+    audit.write_data_dictionary(res["scorecard"]["characteristics"])
+    _step("monitoring and data dictionary", t)
     print(f"analysis: finished in {time.time() - t_start:.0f}s -> {C.METRICS.relative_to(C.ROOT)}")
 
 

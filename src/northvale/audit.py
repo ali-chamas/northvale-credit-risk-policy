@@ -42,7 +42,7 @@ EXPLICIT = {
     "id": ("identifier", "yes", "drop", "Loan identifier; no information about the borrower."),
     "member_id": ("identifier", "yes", "drop", "Borrower identifier; empty in this release."),
     "url": ("identifier", "yes", "drop", "Listing URL; contains only the loan id."),
-    "desc": ("free_text", "yes", "drop", "Free-text description; filled for 38% of 2012 loans and none in 2015, so the model would learn a period effect."),
+    "desc": ("free_text", "yes", "drop", "Free-text description written by the borrower; common in 2012 and almost never filled by 2015, so the model would learn a period effect."),
     "title": ("free_text", "yes", "drop", "Free-text loan title typed by the borrower; duplicates purpose."),
     "emp_title": ("free_text", "yes", "drop", "Free-text job title with very high cardinality and spelling variants; reducing it to groups would take manual coding and can proxy for protected characteristics."),
     "loan_status": ("target", "no", "target", "Outcome: Charged Off or Default = 1, Fully Paid = 0; other statuses excluded."),
@@ -54,13 +54,13 @@ EXPLICIT = {
     "sub_grade": ("lc_pricing", "yes", "benchmark only", "Lending Club sub-grade (A1 to G5): the incumbent ranker the models are compared with."),
     "int_rate": ("lc_pricing", "yes", "P&L only", "Price set from the sub-grade; a model using it would copy Lending Club's model. Used in the P&L layer."),
     "installment": ("lc_pricing", "yes", "drop", "Monthly payment = f(amount, int_rate, term), so it encodes the incumbent price."),
-    "funded_amnt": ("lc_marketplace", "yes", "P&L only", "Amount Lending Club funded; equal to loan_amnt for 99.99% of loans. Used as exposure in the P&L."),
+    "funded_amnt": ("lc_marketplace", "yes", "P&L only", "Amount Lending Club funded; equal to loan_amnt for almost every loan. Used as exposure in the P&L."),
     "funded_amnt_inv": ("lc_marketplace", "no", "drop", "Amount investors funded; set after the listing, a marketplace outcome."),
     "initial_list_status": ("lc_marketplace", "yes", "drop", "Whole vs fractional listing: Lending Club's allocation between investor pools, not a borrower attribute."),
-    "disbursement_method": ("lc_marketplace", "yes", "drop", "Cash vs direct pay; introduced in 2017, constant in scope."),
+    "disbursement_method": ("lc_marketplace", "yes", "drop", "Cash vs direct payment to creditors; the same value (Cash) for every loan in scope."),
     "zip_code": ("fairness", "yes", "drop", "3-digit zip; geography can proxy for race and ethnicity (ECOA / Reg B disparate impact)."),
     "addr_state": ("fairness", "yes", "drop", "State of residence; same proxy risk as zip code, and pricing rules differ by state."),
-    "fico_range_low": ("application_derived", "yes", "transformed", "Combined with fico_range_high into one FICO midpoint (the range is always 4 points wide)."),
+    "fico_range_low": ("application_derived", "yes", "transformed", "Combined with fico_range_high into one FICO midpoint (the range is 4 points wide for almost every loan)."),
     "fico_range_high": ("application_derived", "yes", "transformed", "Combined with fico_range_low into one FICO midpoint."),
     "earliest_cr_line": ("application_derived", "yes", "transformed", "Converted to credit history length in months at the issue date."),
     "emp_length": ("application_derived", "yes", "transformed", "Converted to years (0 to 10+); missing kept as missing."),
@@ -212,6 +212,7 @@ def run(df: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
         "max_app_column": str(top_app["column"].iloc[0]),
         "subgrade_auc_train": float(der.loc[der["column"].str.contains("sub_grade"), "single_feature_auc_train"].iloc[0]),
         "int_rate_auc_train": float(a.loc[a["column"] == "int_rate", "auc"].iloc[0]),
+        "zip_auc_train": float(a.loc[a["column"] == "zip_code", "auc"].iloc[0]),
         "last_fico_auc_train": float(a.loc[a["column"] == "last_fico_range_high", "auc"].iloc[0]),
         "total_rec_prncp_auc_train": float(a.loc[a["column"] == "total_rec_prncp", "auc"].iloc[0]),
     }
@@ -240,3 +241,42 @@ def leakage_demo(df: pd.DataFrame, params: dict, baseline_auc: float) -> tuple[d
         "jump_last_fico": float(out.loc[1, "test_auc"] - baseline_auc),
         "jump_total_rec_prncp": float(out.loc[2, "test_auc"] - baseline_auc),
     }, out
+
+
+def write_data_dictionary(scorecard_chars: list[str]) -> None:
+    """docs/data_dictionary.md: every model feature with its source, coverage and strength (generated)."""
+    a = pd.read_csv(C.DOCS / "feature_audit.csv").set_index("column")
+    der = pd.read_csv(C.TABLES / "single_feature_auc_derived.csv").set_index("column")["single_feature_auc_train"]
+    shap_rank = pd.read_csv(C.TABLES / "shap_importance.csv")["feature"].tolist()
+    source = {"fico": "fico_range_low, fico_range_high", "credit_history_months": "earliest_cr_line, issue_d",
+              "emp_length_years": "emp_length", "loan_to_income": "loan_amnt, annual_inc",
+              "revol_bal_to_income": "revol_bal, annual_inc"}
+    lines = [
+        "<!-- Generated by `make analysis` (audit.write_data_dictionary). Do not edit by hand. -->",
+        "# Data dictionary: model features",
+        "",
+        f"The {len(F.FEATURES)} application-time features used by LightGBM. The scorecard uses the {len(scorecard_chars)} marked in the "
+        "Scorecard column. Missing shares are for the training (2012-2014) and test (Jul-Dec 2015) windows; single-field AUC is "
+        "measured on the training window after binning (0.5 = no information). The decision for every one of the 151 raw "
+        "columns is in `feature_audit.csv`.",
+        "",
+        "| Feature | Meaning | Source column(s) | Type | Missing, train | Missing, test | Single-field AUC | Scorecard | SHAP rank |",
+        "|---|---|---|---|---|---|---|---|---|",
+    ]
+    for f in F.FEATURES:
+        src = source.get(f, f)
+        if f in a.index:
+            mt, ms, auc = a.loc[f, "missing_train"], a.loc[f, "missing_test"], a.loc[f, "single_feature_auc_train"]
+        else:
+            first = src.split(",")[0]
+            mt, ms, auc = a.loc[first, "missing_train"], a.loc[first, "missing_test"], der.get(f, np.nan)
+        kind = "categorical" if f in F.CATEGORICAL else "numeric"
+        rank = shap_rank.index(f) + 1 if f in shap_rank else ""
+        auc_s = f"{float(auc):.3f}" if pd.notna(auc) and auc != "" else ""
+        lines.append(f"| `{f}` | {F.LABELS[f]} | {src} | {kind} | {float(mt) * 100:.1f}% | {float(ms) * 100:.1f}% | {auc_s} | "
+                     f"{'yes' if f in scorecard_chars else ''} | {rank} |")
+    lines += ["", "Derived features: `fico` is the midpoint of the 4-point FICO range; `credit_history_months` counts months "
+              "from the earliest credit line to the issue month; `emp_length_years` maps '< 1 year' to 0 and '10+ years' to 10; "
+              "home ownership values other than MORTGAGE, RENT and OWN are grouped as OTHER; loan purposes with fewer than "
+              "2,500 loans are grouped into 'other'.", ""]
+    (C.DOCS / "data_dictionary.md").write_text("\n".join(lines))

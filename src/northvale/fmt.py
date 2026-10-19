@@ -69,6 +69,27 @@ def dec(v, d: int = 2) -> str:
     return f"{_check(v):.{d}f}"
 
 
+def usd(v, d: int = 1) -> str:
+    """Northvale amounts are US dollars (Lending Club data). 12_681_234 -> '$12.7M'."""
+    x = _check(v)
+    sign = "-" if x < 0 else ""
+    a = abs(x)
+    if a >= 1e9:
+        body = f"{a / 1e9:.{d}f}B"
+    elif a >= 1e6:
+        body = f"{a / 1e6:.{d}f}M"
+    elif a >= 1e3:
+        body = f"{a / 1e3:.{d}f}k"
+    else:
+        body = f"{a:,.0f}"
+    return f"{sign}${body}"
+
+
+def susd(v, d: int = 1) -> str:
+    """Signed dollars for changes: '+$13.8M' / '-$1.1M'."""
+    return ("+" if _check(v) >= 0 else "") + usd(v, d)
+
+
 FILTERS = {
     "pct": pct,
     "pp": pp,
@@ -78,4 +99,6 @@ FILTERS = {
     "signed": signed,
     "ratio": ratio,
     "dec": dec,
+    "usd": usd,
+    "susd": susd,
 }

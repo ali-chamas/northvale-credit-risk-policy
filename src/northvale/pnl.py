@@ -264,6 +264,12 @@ def run(df: pd.DataFrame) -> dict:
         }
     pd.DataFrame(scen).T.to_csv(C.TABLES / "scenario_sensitivity.csv")
 
+    # Realized P&L by rate band on the test book (does the price cover the risk?)
+    tb = test.assign(band=band(test["int_rate"]), real=realized_pnl(test, a))
+    by_band = {b: {"n": int((tb["band"] == b).sum()), "default_rate": float(tb.loc[tb["band"] == b, "target"].mean()),
+                   "realized_profit": float(tb.loc[tb["band"] == b, "real"].sum()),
+                   "amount": float(tb.loc[tb["band"] == b, "funded_amnt"].sum())} for b in RATE_LABELS}
+
     # Band table for the README
     band_tbl = pd.DataFrame({
         "rate_band": RATE_LABELS,
@@ -325,6 +331,7 @@ def run(df: pd.DataFrame) -> dict:
         "options": options,
         "scorecard_balanced": sc_bal,
         "price_aware": price_aware,
+        "by_band": by_band,
         "recommended": "balanced",
         "scenarios": scen,
         "annualisation": {

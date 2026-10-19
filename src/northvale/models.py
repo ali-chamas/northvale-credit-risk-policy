@@ -286,6 +286,7 @@ def run(df: pd.DataFrame) -> dict:
     res["lgbm"]["best_params"] = best_params
     res["lgbm"]["best_iteration"] = int(bst.best_iteration)
     res["lgbm"]["valid_auc"] = float(grid["valid_auc"].max())
+    res["lgbm"]["valid_auc_range"] = float(grid["valid_auc"].max() - grid["valid_auc"].min())
     res["lgbm"]["n_features"] = len(F.FEATURES)
     res["lgbm"]["train_auc"] = float(roc_auc_score(ytr, raw_lgb["train"]))
     res["lgbm"]["fit_seconds"] = round(time.time() - t0)

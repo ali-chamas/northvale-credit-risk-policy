@@ -102,6 +102,24 @@ CAT_REASONS = {
 }
 
 
+MONEY = {"annual_inc", "bc_open_to_buy", "tot_hi_cred_lim", "loan_amnt", "avg_cur_bal", "revol_bal", "total_bc_limit",
+         "tot_cur_bal", "total_rev_hi_lim", "total_bal_ex_mort", "total_il_high_credit_limit", "delinq_amnt", "tot_coll_amt"}
+SHARE = {"loan_to_income", "revol_bal_to_income"}
+
+
+def display_value(feature: str, value) -> str:
+    """Short display of a feature value, e.g. '$52,000', '7%', '12', 'rent'."""
+    if value is None or (isinstance(value, float) and np.isnan(value)):
+        return "missing"
+    if isinstance(value, str):
+        return value.replace("_", " ").lower()
+    if feature in MONEY:
+        return f"${value:,.0f}"
+    if feature in SHARE:
+        return f"{value * 100:.0f}%"
+    return f"{value:,.0f}" if abs(value) >= 10 or float(value).is_integer() else f"{value:.1f}"
+
+
 def reason_text(feature: str, value, median) -> str:
     if feature in CAT_REASONS:
         return CAT_REASONS[feature].format(v=str(value).replace("_", " ").lower())
@@ -150,7 +168,8 @@ def run(df: pd.DataFrame, pd_cutoff: float) -> dict:
         row = smp.loc[i]
         return {
             "top": [{"feature": f, "label": F.LABELS.get(f, f), "shap": float(contrib[f]),
-                     "value": (None if pd.isna(row[f]) else (str(row[f]) if f in F.CATEGORICAL else float(row[f])))}
+                     "value": (None if pd.isna(row[f]) else (str(row[f]) if f in F.CATEGORICAL else float(row[f]))),
+                     "display": display_value(f, None if pd.isna(row[f]) else (str(row[f]) if f in F.CATEGORICAL else float(row[f])))}
                     for f in contrib.index[:8]],
             "other_shap": float(contrib.iloc[8:].sum()),
             "reasons": [reason_text(f, row[f], medians.get(f)) for f in risk_up.index[:3]],

@@ -48,9 +48,11 @@ def main() -> None:
         lstrip_blocks=True,
     )
     env.filters.update(fmt.FILTERS)
-    for tpl in sorted(TEMPLATES.glob("*.md.j2")):
-        name = tpl.name[: -len(".j2")]
-        text = env.get_template(tpl.name).render(m=metrics)
+    # Top-level templates render to the repo root; templates/docs/* render into docs/.
+    for tpl in sorted(TEMPLATES.rglob("*.md.j2")):
+        rel = tpl.relative_to(TEMPLATES).as_posix()
+        name = rel[: -len(".j2")]
+        text = env.get_template(rel).render(m=metrics)
         (ROOT / name).write_text(HEADER.format(name=name) + text)
         print(f"rendered {name}")
 
